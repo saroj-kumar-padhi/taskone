@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -17,39 +18,78 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailOrPhone = TextEditingController();
   final TextEditingController password = TextEditingController();
 
+  // Future<void> signIn() async {
+  //   try {
+  //     String emailOrPhoneNumber = emailOrPhone.text.trim();
+
+  //     UserCredential userCredential;
+
+  //     // Check if the input is a valid email address
+  //     if (RegExp(
+  //             r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+  //         .hasMatch(emailOrPhoneNumber)) {
+  //       userCredential = await _auth.signInWithEmailAndPassword(
+  //         email: emailOrPhoneNumber,
+  //         password: password.text,
+  //       );
+  //     } else {
+  //       // If not a valid email, assume it's a phone number
+  //       userCredential = await _auth.signInWithEmailAndPassword(
+  //         email:
+  //             '', // Firebase requires an email, but we won't use it for authentication
+  //         password: password.text,
+  //       );
+
+  //       // Additional steps for phone number authentication
+  //       await userCredential.user
+  //           ?.updatePhoneNumber(PhoneAuthProvider.credential(
+  //         verificationId:
+  //             'dummy_verification_id', // Replace with actual verification ID
+  //         smsCode:
+  //             emailOrPhoneNumber, // Assuming phone number is entered in place of the email
+  //       ));
+  //     }
+
+  //     print('User signed in successfully!');
+  //   } catch (e) {
+  //     print('Error during sign in: $e');
+  //   }
+  // }
+
   Future<void> signIn() async {
     try {
       String emailOrPhoneNumber = emailOrPhone.text.trim();
+      String enteredPassword = password.text;
 
-      UserCredential userCredential;
+      // Query Firestore to find a user with matching email or phone
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('email or phone no', isEqualTo: emailOrPhoneNumber)
+              .limit(1)
+              .get();
 
-      // Check if the input is a valid email address
-      if (RegExp(
-              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-          .hasMatch(emailOrPhoneNumber)) {
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: emailOrPhoneNumber,
-          password: password.text,
-        );
+      if (querySnapshot.docs.isNotEmpty) {
+        // User with provided email or phone found
+        // Check if the entered password matches the stored password
+        var userData = querySnapshot.docs.first.data();
+        var storedPassword = userData['password'];
+
+        if (enteredPassword == storedPassword) {
+          print('User signed in successfully!');
+          // Navigate to the desired screen after successful sign-in
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AdminPage()),
+          );
+        } else {
+          print('Incorrect password');
+          // Handle incorrect password
+        }
       } else {
-        // If not a valid email, assume it's a phone number
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email:
-              '', // Firebase requires an email, but we won't use it for authentication
-          password: password.text,
-        );
-
-        // Additional steps for phone number authentication
-        await userCredential.user
-            ?.updatePhoneNumber(PhoneAuthProvider.credential(
-          verificationId:
-              'dummy_verification_id', // Replace with actual verification ID
-          smsCode:
-              emailOrPhoneNumber, // Assuming phone number is entered in place of the email
-        ));
+        print('User not found');
+        // Handle user not found
       }
-
-      print('User signed in successfully!');
     } catch (e) {
       print('Error during sign in: $e');
     }

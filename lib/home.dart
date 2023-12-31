@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:task2/admin.dart';
 import 'package:task2/login.dart';
@@ -22,6 +21,7 @@ class _HomePageState extends State<HomePage> {
     final TextEditingController email = TextEditingController();
     final TextEditingController password = TextEditingController();
     final userName = TextEditingController();
+    final TextEditingController phone = TextEditingController();
 
     Future<void> signUp() async {
       try {
@@ -36,9 +36,20 @@ class _HomePageState extends State<HomePage> {
             email: emailOrPhone,
             password: password.text,
           );
+
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user?.uid)
+              .set({
+            'username': userName.text,
+            'email or phone no': emailOrPhone,
+            'timestamp': timestamp,
+            'phone': phone.text,
+            'password': password.text,
+          });
         } else {
           userCredential = await _auth.createUserWithEmailAndPassword(
-            email: '',
+            email: emailOrPhone,
             password: password.text,
           );
 
@@ -48,12 +59,6 @@ class _HomePageState extends State<HomePage> {
             smsCode: emailOrPhone,
           ));
         }
-
-        await _firestore.collection('users').doc(userCredential.user?.uid).set({
-          'username': userName.text,
-          'email or phone no': emailOrPhone,
-          'timestamp': timestamp,
-        });
 
         print('User registered successfully!');
       } catch (e) {
@@ -91,7 +96,17 @@ class _HomePageState extends State<HomePage> {
                   controller: email,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter your email or phone number',
+                    hintText: 'Enter your email',
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: TextField(
+                  controller: phone,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter your phone Number',
                   ),
                 ),
               ),
@@ -112,10 +127,12 @@ class _HomePageState extends State<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      await signUp();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => AdminPage()),
+                        MaterialPageRoute(
+                            builder: (context) => const AdminPage()),
                       );
                     },
                     child: const Text("Sign Up"),
