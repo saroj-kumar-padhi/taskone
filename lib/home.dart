@@ -15,57 +15,85 @@ class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  final DateTime timestamp = DateTime.now();
+  final TextEditingController email = TextEditingController();
+  final TextEditingController password = TextEditingController();
+  final userName = TextEditingController();
+  final TextEditingController phone = TextEditingController();
+
+  bool isPasswordValid = true; // Track password validation
+
+  Future<void> signUp() async {
+    try {
+      String emailOrPhone = email.text.trim();
+      String userPassword = password.text;
+
+      if (userPassword.length < 6) {
+        // Show SnackBar if password is too short
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Password should be at least 6 characters.'),
+          ),
+        );
+
+        // Set isPasswordValid to false to indicate invalid password
+        setState(() {
+          isPasswordValid = false;
+        });
+
+        return; // Return to exit the function if password is too short
+      }
+
+      // Reset isPasswordValid to true
+      setState(() {
+        isPasswordValid = true;
+      });
+
+      UserCredential userCredential;
+      if (RegExp(
+              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+          .hasMatch(emailOrPhone)) {
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: emailOrPhone,
+          password: userPassword,
+        );
+
+        await _firestore.collection('users').doc(userCredential.user?.uid).set({
+          'username': userName.text,
+          'email or phone no': emailOrPhone,
+          'timestamp': timestamp,
+          'phone': phone.text,
+          'password': password.text,
+        });
+      } else {
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: emailOrPhone,
+          password: userPassword,
+        );
+
+        await userCredential.user
+            ?.updatePhoneNumber(PhoneAuthProvider.credential(
+          verificationId: 'dummy_verification_id',
+          smsCode: emailOrPhone,
+        ));
+      }
+
+      // If registration is successful and password is valid, navigate to admin page
+      if (isPasswordValid) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminPage()),
+        );
+      }
+
+      print('User registered successfully!');
+    } catch (e) {
+      print('Error during registration: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final DateTime timestamp = DateTime.now();
-    final TextEditingController email = TextEditingController();
-    final TextEditingController password = TextEditingController();
-    final userName = TextEditingController();
-    final TextEditingController phone = TextEditingController();
-
-    Future<void> signUp() async {
-      try {
-        String emailOrPhone = email.text.trim();
-
-        UserCredential userCredential;
-
-        if (RegExp(
-                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-            .hasMatch(emailOrPhone)) {
-          userCredential = await _auth.createUserWithEmailAndPassword(
-            email: emailOrPhone,
-            password: password.text,
-          );
-
-          await _firestore
-              .collection('users')
-              .doc(userCredential.user?.uid)
-              .set({
-            'username': userName.text,
-            'email or phone no': emailOrPhone,
-            'timestamp': timestamp,
-            'phone': phone.text,
-            'password': password.text,
-          });
-        } else {
-          userCredential = await _auth.createUserWithEmailAndPassword(
-            email: emailOrPhone,
-            password: password.text,
-          );
-
-          await userCredential.user
-              ?.updatePhoneNumber(PhoneAuthProvider.credential(
-            verificationId: 'dummy_verification_id',
-            smsCode: emailOrPhone,
-          ));
-        }
-
-        print('User registered successfully!');
-      } catch (e) {
-        print('Error during registration: $e');
-      }
-    }
-
     return Scaffold(
       body: ListView(
         children: [
@@ -120,21 +148,18 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              // New user, navigate to admin page
-
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
-                    onPressed: () async {
-                      await signUp();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const AdminPage()),
-                      );
-                    },
+                    style: ElevatedButton.styleFrom(
+                      // side: BorderSide(color: Colors.yellow, width: 5),
+
+                      shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(4))),
+                    ),
+                    onPressed: signUp,
                     child: const Text("Sign Up"),
                   ),
                 ),
@@ -159,7 +184,7 @@ class _HomePageState extends State<HomePage> {
                           builder: (context) => LoginPage(),
                         )),
                     child: Text(
-                      "Sign in",
+                      "Login",
                       style: TextStyle(fontSize: 15, color: Colors.purple),
                     ),
                   ),

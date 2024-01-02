@@ -15,7 +15,8 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Page'),
+        title: Text('Admin'),
+        centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('users').snapshots(),
@@ -35,16 +36,46 @@ class _AdminPageState extends State<AdminPage> {
                   userData['email or phone no'] ?? '6280644889';
               final phone = userData['phone'] ?? '6280644889';
 
-              return ListTile(
-                title: Text(username),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(emailOrPhone),
-                    Text(phone), // Display phone number
-                  ],
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15.0),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    title: Text(username),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(emailOrPhone),
+                        Text(phone),
+                      ],
+                    ),
+                  ),
                 ),
               );
+              // ListTile(
+              //   title: Text(username),
+              //   subtitle: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Text(emailOrPhone),
+              //       Text(phone), // Display phone number
+              //     ],
+              //   ),
+              // );
             },
           );
         },

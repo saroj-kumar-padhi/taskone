@@ -100,6 +100,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
+        centerTitle: true,
       ),
       body: ListView(
         children: [
@@ -139,13 +140,19 @@ class _LoginPageState extends State<LoginPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      // side: BorderSide(color: Colors.yellow, width: 5),
+
+                      shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(4))),
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => AdminPage()),
                       );
                     },
-                    child: const Text("Sign In"),
+                    child: const Text("Login"),
                   ),
                 ),
               ),
